@@ -6,9 +6,11 @@ const REVIEWS_API_URL = 'http://localhost:8000/api/v1/reviews/movie/';
 const main = document.getElementById("section");
 const form = document.getElementById("form");
 const search = document.getElementById("query");
+const movieDetailsModal = document.getElementById("movie-details-modal");
+const modalContent = document.getElementById("modal-content");
+const closeModalBtn = document.getElementById("close-modal");
 
 returnMovies(APILINK);
-
 
 function returnMovies(url) {
   fetch(url)
@@ -24,6 +26,12 @@ function returnMovies(url) {
         image.setAttribute('class', 'thumbnail');
         image.setAttribute('id', 'image');
         image.src = IMG_PATH + element.poster_path;
+
+       
+        image.addEventListener('click', () => {
+          console.log("Image clicked:", element.title); 
+          showMovieDetails(element);
+        });
   
         const title = document.createElement('h3');
         title.setAttribute('id', 'title');
@@ -40,12 +48,35 @@ function returnMovies(url) {
         div_column.appendChild(div_card);
         main.appendChild(div_column);
 
-       
         getReviews(element.id, div_card);
       });
     });
 }
 
+function showMovieDetails(movie) {
+  
+  const movieInfo = `
+    <h2>${movie.title}</h2>
+    <p><strong>Release Date:</strong> ${movie.release_date}</p>
+    <p><strong>Overview:</strong> ${movie.overview}</p>
+    <p><strong>Rating:</strong> ${movie.vote_average}</p>
+  `;
+  
+  modalContent.innerHTML = movieInfo; 
+  movieDetailsModal.style.display = "block"; 
+}
+
+
+closeModalBtn.addEventListener('click', () => {
+  movieDetailsModal.style.display = "none";
+});
+
+
+window.addEventListener('click', (e) => {
+  if (e.target === movieDetailsModal) {
+    movieDetailsModal.style.display = "none";
+  }
+});
 
 function getReviews(movieId, movieCard) {
   fetch(`${REVIEWS_API_URL}${movieId}`)
@@ -63,8 +94,7 @@ function getReviews(movieId, movieCard) {
         reviewElement.innerHTML = `<strong>${review.user}</strong>: ${review.review}`;
         reviewsDiv.appendChild(reviewElement);
       });
-      
-     
+
       const reviewForm = document.createElement('form');
       reviewForm.setAttribute('class', 'review-form');
       
@@ -78,7 +108,6 @@ function getReviews(movieId, movieCard) {
       reviewForm.appendChild(reviewInput);
       reviewForm.appendChild(submitButton);
       
-      
       reviewForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const reviewText = reviewInput.value;
@@ -87,6 +116,7 @@ function getReviews(movieId, movieCard) {
         if (reviewText) {
           postReview(movieId, user, reviewText);
           reviewInput.value = ''; 
+          addReviewToUI(movieId, user, reviewText, reviewsDiv); 
         }
       });
 
@@ -94,7 +124,6 @@ function getReviews(movieId, movieCard) {
       movieCard.appendChild(reviewForm);
     });
 }
-
 
 function postReview(movieId, user, review) {
   const reviewData = {
@@ -114,12 +143,15 @@ function postReview(movieId, user, review) {
     .then(result => {
       console.log(result);
       alert('Review submitted successfully');
-      
-      getReviews(movieId);
     })
     .catch(err => console.error('Error posting review:', err));
 }
 
+function addReviewToUI(movieId, user, review, reviewsDiv) {
+  const newReview = document.createElement('p');
+  newReview.innerHTML = `<strong>${user}</strong>: ${review}`;
+  reviewsDiv.appendChild(newReview);
+}
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
